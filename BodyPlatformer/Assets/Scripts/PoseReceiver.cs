@@ -29,6 +29,10 @@ public class PoseReceiver : MonoBehaviour
     [SerializeField] private float worldWidth = 16f;
     [SerializeField] private float worldHeight = 9f;
 
+    [Header("Tracking")]
+    [SerializeField, Range(0.01f, 1f)]
+    private float smoothing = 0.25f;
+
     private GameObject[] landmarkObjects = new GameObject[33];
 
     private UdpClient udpClient;
@@ -111,7 +115,7 @@ public class PoseReceiver : MonoBehaviour
         PoseData pose =
             JsonUtility.FromJson<PoseData>(message);
 
-        if (pose?.landmarks == null)
+        if (pose == null || pose.landmarks == null)
             return;
 
         foreach (Landmark landmark in pose.landmarks)
@@ -126,9 +130,21 @@ public class PoseReceiver : MonoBehaviour
             float y =
                 (0.5f - landmark.y) * worldHeight;
 
-            landmarkObjects[landmark.id]
-                .transform.position =
+            Vector3 targetPosition =
                 new Vector3(x, y, 0);
+
+            GameObject landmarkObject =
+                landmarkObjects[landmark.id];
+
+            if (landmarkObject == null)
+                continue;
+
+            landmarkObject.transform.position =
+                Vector3.Lerp(
+                    landmarkObject.transform.position,
+                    targetPosition,
+                    smoothing
+                );
         }
     }
 
@@ -139,7 +155,12 @@ public class PoseReceiver : MonoBehaviour
 
     private void OnDestroy()
     {
-        receiveThread?.Interrupt();
         udpClient?.Close();
+
+        if (receiveThread != null &&
+            receiveThread.IsAlive)
+        {
+            receiveThread.Interrupt();
+        }
     }
 }
