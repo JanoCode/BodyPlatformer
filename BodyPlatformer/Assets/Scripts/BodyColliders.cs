@@ -4,60 +4,79 @@ public class BodyColliders : MonoBehaviour
 {
     [SerializeField] private PoseReceiver poseReceiver;
 
-    [Header("Collider")]
+    [Header("Edge Colliders")]
     [SerializeField] private float edgeRadius = 0.03f;
 
-    private readonly int[,] connections =
-    {
-        {11, 12}, // hombros
+    [Header("Head Collider")]
+    [SerializeField] private float headRadiusMultiplier = 1.15f;
+    [SerializeField] private float minimumHeadRadius = 0.25f;
 
-        {11, 13}, // brazo izquierdo
-        {13, 15},
+    private EdgeCollider2D upperBodyCollider;
+    private EdgeCollider2D leftLegCollider;
+    private EdgeCollider2D rightLegCollider;
 
-        {12, 14}, // brazo derecho
-        {14, 16},
-
-        {11, 23}, // torso izquierdo
-        {12, 24}, // torso derecho
-        {23, 24}, // cadera
-
-        {23, 25}, // pierna izquierda
-        {25, 27},
-
-        {24, 26}, // pierna derecha
-        {26, 28}
-    };
-
-    private EdgeCollider2D[] colliders;
+    private CircleCollider2D headCollider;
+    private GameObject headColliderObject;
 
     private void Start()
     {
-        colliders =
-            new EdgeCollider2D[connections.GetLength(0)];
+        int bodyLayer = LayerMask.NameToLayer("Body");
 
-        int bodyLayer =
-            LayerMask.NameToLayer("Body");
+        upperBodyCollider = CreateEdgeCollider(
+            "UpperBodyCollider",
+            bodyLayer
+        );
 
-        for (int i = 0; i < colliders.Length; i++)
-        {
-            GameObject colliderObject =
-                new GameObject("BodyCollider_" + i);
+        leftLegCollider = CreateEdgeCollider(
+            "LeftLegCollider",
+            bodyLayer
+        );
 
-            colliderObject.transform.SetParent(transform);
+        rightLegCollider = CreateEdgeCollider(
+            "RightLegCollider",
+            bodyLayer
+        );
 
-            colliderObject.transform.localPosition = Vector3.zero;
-            colliderObject.transform.localRotation = Quaternion.identity;
-            colliderObject.transform.localScale = Vector3.one;
+        CreateHeadCollider(bodyLayer);
+    }
 
-            colliderObject.layer = bodyLayer;
+    private EdgeCollider2D CreateEdgeCollider(
+        string objectName,
+        int layer
+    )
+    {
+        GameObject obj = new GameObject(objectName);
 
-            EdgeCollider2D edge =
-                colliderObject.AddComponent<EdgeCollider2D>();
+        obj.transform.SetParent(transform);
+        obj.transform.localPosition = Vector3.zero;
+        obj.transform.localRotation = Quaternion.identity;
+        obj.transform.localScale = Vector3.one;
 
-            edge.edgeRadius = edgeRadius;
+        obj.layer = layer;
 
-            colliders[i] = edge;
-        }
+        EdgeCollider2D edge =
+            obj.AddComponent<EdgeCollider2D>();
+
+        edge.edgeRadius = edgeRadius;
+
+        return edge;
+    }
+
+    private void CreateHeadCollider(int layer)
+    {
+        headColliderObject =
+            new GameObject("HeadCollider");
+
+        headColliderObject.transform.SetParent(transform);
+
+        headColliderObject.transform.localPosition = Vector3.zero;
+        headColliderObject.transform.localRotation = Quaternion.identity;
+        headColliderObject.transform.localScale = Vector3.one;
+
+        headColliderObject.layer = layer;
+
+        headCollider =
+            headColliderObject.AddComponent<CircleCollider2D>();
     }
 
     private void FixedUpdate()
@@ -71,34 +90,99 @@ public class BodyColliders : MonoBehaviour
         if (points == null || points.Length < 33)
             return;
 
-        for (int i = 0; i < colliders.Length; i++)
+        UpdateUpperBody(points);
+        UpdateLeftLeg(points);
+        UpdateRightLeg(points);
+        UpdateHead(points);
+    }
+
+    private void UpdateUpperBody(GameObject[] points)
+    {
+        Vector2[] edgePoints =
         {
-            int startIndex = connections[i, 0];
-            int endIndex = connections[i, 1];
+            GetLocalPoint(points[15], upperBodyCollider),
+            GetLocalPoint(points[13], upperBodyCollider),
+            GetLocalPoint(points[11], upperBodyCollider),
+            GetLocalPoint(points[12], upperBodyCollider),
+            GetLocalPoint(points[14], upperBodyCollider),
+            GetLocalPoint(points[16], upperBodyCollider)
+        };
 
-            GameObject startObject = points[startIndex];
-            GameObject endObject = points[endIndex];
+        upperBodyCollider.points = edgePoints;
+    }
 
-            if (startObject == null || endObject == null)
-                continue;
+    private void UpdateLeftLeg(GameObject[] points)
+    {
+        Vector2[] edgePoints =
+        {
+            GetLocalPoint(points[23], leftLegCollider),
+            GetLocalPoint(points[25], leftLegCollider),
+            GetLocalPoint(points[27], leftLegCollider)
+        };
 
-            Vector3 startWorld =
-                startObject.transform.position;
+        leftLegCollider.points = edgePoints;
+    }
 
-            Vector3 endWorld =
-                endObject.transform.position;
+    private void UpdateRightLeg(GameObject[] points)
+    {
+        Vector2[] edgePoints =
+        {
+            GetLocalPoint(points[24], rightLegCollider),
+            GetLocalPoint(points[26], rightLegCollider),
+            GetLocalPoint(points[28], rightLegCollider)
+        };
 
-            Vector2 startLocal =
-                colliders[i].transform.InverseTransformPoint(startWorld);
+        rightLegCollider.points = edgePoints;
+    }
 
-            Vector2 endLocal =
-                colliders[i].transform.InverseTransformPoint(endWorld);
+    private void UpdateHead(GameObject[] points)
+    {
+        // MediaPipe:
+        // 0 = nariz
+        // 7 = oreja izquierda
+        // 8 = oreja derecha
 
-            colliders[i].points = new Vector2[]
-            {
-                startLocal,
-                endLocal
-            };
-        }
+        Vector3 nose =
+            points[0].transform.position;
+
+        Vector3 leftEar =
+            points[7].transform.position;
+
+        Vector3 rightEar =
+            points[8].transform.position;
+
+        Vector3 center =
+            (leftEar + rightEar) / 2f;
+
+        float headWidth =
+            Vector2.Distance(leftEar, rightEar);
+
+        float radius =
+            Mathf.Max(
+                minimumHeadRadius,
+                headWidth * 0.5f * headRadiusMultiplier
+            );
+
+        headColliderObject.transform.position =
+            new Vector3(
+                center.x,
+                center.y,
+                0f
+            );
+
+        headCollider.offset = Vector2.zero;
+        headCollider.radius = radius;
+    }
+
+    private Vector2 GetLocalPoint(
+        GameObject landmark,
+        EdgeCollider2D collider
+    )
+    {
+        Vector3 worldPosition =
+            landmark.transform.position;
+
+        return collider.transform
+            .InverseTransformPoint(worldPosition);
     }
 }
