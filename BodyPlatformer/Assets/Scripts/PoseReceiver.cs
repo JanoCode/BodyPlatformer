@@ -132,6 +132,11 @@ public class PoseReceiver : MonoBehaviour
         }
     }
 
+    public GameObject[] GetLandmarkObjects()
+    {
+        return landmarkObjects;
+    }
+
     private void OnDestroy()
     {
         receiveThread?.Interrupt();
