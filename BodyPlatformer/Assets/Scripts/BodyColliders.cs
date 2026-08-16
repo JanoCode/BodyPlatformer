@@ -3,7 +3,6 @@ using UnityEngine;
 public class BodyColliders : MonoBehaviour
 {
     [SerializeField] private PoseReceiver poseReceiver;
-
     [SerializeField] private float edgeRadius = 0.08f;
 
     private readonly int[,] connections =
@@ -33,12 +32,18 @@ public class BodyColliders : MonoBehaviour
     {
         colliders = new EdgeCollider2D[connections.GetLength(0)];
 
+        int bodyLayer = LayerMask.NameToLayer("Body");
+
         for (int i = 0; i < colliders.Length; i++)
         {
             GameObject colliderObject =
                 new GameObject("BodyCollider_" + i);
 
-            colliderObject.transform.parent = transform;
+            colliderObject.transform.SetParent(transform);
+
+            // IMPORTANTE:
+            // Cada collider se crea directamente en la layer Body
+            colliderObject.layer = bodyLayer;
 
             EdgeCollider2D edge =
                 colliderObject.AddComponent<EdgeCollider2D>();
