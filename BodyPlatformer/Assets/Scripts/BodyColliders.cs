@@ -3,7 +3,9 @@ using UnityEngine;
 public class BodyColliders : MonoBehaviour
 {
     [SerializeField] private PoseReceiver poseReceiver;
-    [SerializeField] private float edgeRadius = 0.08f;
+
+    [Header("Collider")]
+    [SerializeField] private float edgeRadius = 0.03f;
 
     private readonly int[,] connections =
     {
@@ -30,9 +32,11 @@ public class BodyColliders : MonoBehaviour
 
     private void Start()
     {
-        colliders = new EdgeCollider2D[connections.GetLength(0)];
+        colliders =
+            new EdgeCollider2D[connections.GetLength(0)];
 
-        int bodyLayer = LayerMask.NameToLayer("Body");
+        int bodyLayer =
+            LayerMask.NameToLayer("Body");
 
         for (int i = 0; i < colliders.Length; i++)
         {
@@ -41,8 +45,10 @@ public class BodyColliders : MonoBehaviour
 
             colliderObject.transform.SetParent(transform);
 
-            // IMPORTANTE:
-            // Cada collider se crea directamente en la layer Body
+            colliderObject.transform.localPosition = Vector3.zero;
+            colliderObject.transform.localRotation = Quaternion.identity;
+            colliderObject.transform.localScale = Vector3.one;
+
             colliderObject.layer = bodyLayer;
 
             EdgeCollider2D edge =
@@ -70,26 +76,29 @@ public class BodyColliders : MonoBehaviour
             int startIndex = connections[i, 0];
             int endIndex = connections[i, 1];
 
-            if (points[startIndex] == null ||
-                points[endIndex] == null)
+            GameObject startObject = points[startIndex];
+            GameObject endObject = points[endIndex];
+
+            if (startObject == null || endObject == null)
                 continue;
 
-            Vector2 start =
-                transform.InverseTransformPoint(
-                    points[startIndex].transform.position
-                );
+            Vector3 startWorld =
+                startObject.transform.position;
 
-            Vector2 end =
-                transform.InverseTransformPoint(
-                    points[endIndex].transform.position
-                );
+            Vector3 endWorld =
+                endObject.transform.position;
 
-            colliders[i].points =
-                new Vector2[]
-                {
-                    start,
-                    end
-                };
+            Vector2 startLocal =
+                colliders[i].transform.InverseTransformPoint(startWorld);
+
+            Vector2 endLocal =
+                colliders[i].transform.InverseTransformPoint(endWorld);
+
+            colliders[i].points = new Vector2[]
+            {
+                startLocal,
+                endLocal
+            };
         }
     }
 }
