@@ -37,12 +37,16 @@ public class PoseReceiver : MonoBehaviour
 
     [Header("Filtros")]
     [SerializeField] private float maxNormalizedMargin = 0.05f;
-
     [SerializeField] private float maxWorldJumpPerFrame = 1.2f;
+
+    [Header("Pérdida temporal")]
+    [SerializeField] private float lostLandmarkGraceTime = 0.2f;
 
     private GameObject[] landmarkObjects = new GameObject[33];
     private bool[] landmarkVisible = new bool[33];
     private bool[] landmarkInitialized = new bool[33];
+
+    private float[] lastValidTime = new float[33];
 
     private UdpClient udpClient;
     private Thread receiveThread;
@@ -78,6 +82,7 @@ public class PoseReceiver : MonoBehaviour
             landmarkObjects[i] = point;
             landmarkVisible[i] = false;
             landmarkInitialized[i] = false;
+            lastValidTime[i] = -999f;
 
             point.SetActive(false);
         }
@@ -124,13 +129,19 @@ public class PoseReceiver : MonoBehaviour
         }
 
         if (message == null)
+        {
+            UpdateLostLandmarks();
             return;
+        }
 
         PoseData pose =
             JsonUtility.FromJson<PoseData>(message);
 
         if (pose == null || pose.landmarks == null)
+        {
+            UpdateLostLandmarks();
             return;
+        }
 
         foreach (Landmark landmark in pose.landmarks)
         {
@@ -140,6 +151,8 @@ public class PoseReceiver : MonoBehaviour
 
             ProcessLandmark(landmark);
         }
+
+        UpdateLostLandmarks();
     }
 
     private void ProcessLandmark(Landmark landmark)
@@ -152,22 +165,15 @@ public class PoseReceiver : MonoBehaviour
         if (landmarkObject == null)
             return;
 
-        // 1. Confianza de MediaPipe
-        if (landmark.visibility < visibilityThreshold)
-        {
-            HideLandmark(id);
-            return;
-        }
+        bool valid =
+            landmark.visibility >= visibilityThreshold &&
+            landmark.x >= -maxNormalizedMargin &&
+            landmark.x <= 1f + maxNormalizedMargin &&
+            landmark.y >= -maxNormalizedMargin &&
+            landmark.y <= 1f + maxNormalizedMargin;
 
-        // 2. Rechazar puntos claramente fuera de la imagen
-        if (
-            landmark.x < -maxNormalizedMargin ||
-            landmark.x > 1f + maxNormalizedMargin ||
-            landmark.y < -maxNormalizedMargin ||
-            landmark.y > 1f + maxNormalizedMargin
-        )
+        if (!valid)
         {
-            HideLandmark(id);
             return;
         }
 
@@ -178,9 +184,8 @@ public class PoseReceiver : MonoBehaviour
             (0.5f - landmark.y) * worldHeight;
 
         Vector3 targetPosition =
-            new Vector3(x, y, 0);
+            new Vector3(x, y, 0f);
 
-        // Primer frame válido del punto
         if (!landmarkInitialized[id])
         {
             landmarkObject.transform.position =
@@ -188,6 +193,7 @@ public class PoseReceiver : MonoBehaviour
 
             landmarkInitialized[id] = true;
             landmarkVisible[id] = true;
+            lastValidTime[id] = Time.time;
 
             landmarkObject.SetActive(true);
 
@@ -200,14 +206,14 @@ public class PoseReceiver : MonoBehaviour
                 targetPosition
             );
 
-        // 3. Rechazar teletransportes absurdos
         if (distance > maxWorldJumpPerFrame)
         {
-            HideLandmark(id);
             return;
         }
 
         landmarkVisible[id] = true;
+        lastValidTime[id] = Time.time;
+
         landmarkObject.SetActive(true);
 
         landmarkObject.transform.position =
@@ -218,18 +224,33 @@ public class PoseReceiver : MonoBehaviour
             );
     }
 
+    private void UpdateLostLandmarks()
+    {
+        for (int i = 0; i < landmarkObjects.Length; i++)
+        {
+            if (!landmarkVisible[i])
+                continue;
+
+            float timeSinceLastValid =
+                Time.time - lastValidTime[i];
+
+            if (timeSinceLastValid >
+                lostLandmarkGraceTime)
+            {
+                HideLandmark(i);
+            }
+        }
+    }
+
     private void HideLandmark(int id)
     {
         landmarkVisible[id] = false;
+        landmarkInitialized[id] = false;
 
         if (landmarkObjects[id] != null)
         {
             landmarkObjects[id].SetActive(false);
         }
-
-        // Cuando vuelva a aparecer,
-        // aceptamos su nueva posición como inicial.
-        landmarkInitialized[id] = false;
     }
 
     public GameObject[] GetLandmarkObjects()
