@@ -199,8 +199,6 @@ MonoBehaviour:
   edgeRadius: 0.08
   headHeightMultiplier: 0.9
   headWidthMultiplier: 1.15
-  handWidthMultiplier: 1.8
-  minimumHandWidth: 0.3
 --- !u!4 &245711364
 Transform:
   m_ObjectHideFlags: 0
@@ -216,6 +214,69 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &255607534
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 255607536}
+  - component: {fileID: 255607535}
+  - component: {fileID: 255607537}
+  m_Layer: 0
+  m_Name: HandOrientationTracker
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &255607535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 255607534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 543d40aa23e95c34d851afd5e3d89f04, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandOrientationTracker
+  poseReceiver: {fileID: 1356920478}
+  flatThreshold: 0.6
+  debugLogs: 1
+--- !u!4 &255607536
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 255607534}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.61662, y: 2.28187, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &255607537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 255607534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02ea356baa9d1bc47b2e6a02914e85a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandPlatformController
+  orientationTracker: {fileID: 255607535}
+  bodyCollidersRoot: {fileID: 245711364}
+  debugLogs: 0
 --- !u!1 &263752094
 GameObject:
   m_ObjectHideFlags: 0
@@ -1254,10 +1315,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PoseReceiver
   landmarkPrefab: {fileID: 2815894842200672081, guid: db2120523e5e21f43bb04a9b91134bd5, type: 3}
+  handLandmarkPrefab: {fileID: 2815894842200672081, guid: db2120523e5e21f43bb04a9b91134bd5, type: 3}
   fallbackWorldWidth: 16
   fallbackWorldHeight: 9
   smoothing: 0.25
   visibilityThreshold: 0.65
+  handSmoothing: 0.35
+  handLostTime: 0.25
+  maxHandWorldJumpPerFrame: 1.5
   maxNormalizedMargin: 0.05
   maxWorldJumpPerFrame: 1.2
   lostLandmarkGraceTime: 0.2
@@ -1500,3 +1565,4 @@ SceneRoots:
   - {fileID: 26078229}
   - {fileID: 992514833}
   - {fileID: 2094800533}
+  - {fileID: 255607536}
