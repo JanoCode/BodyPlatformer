@@ -4,10 +4,6 @@ using System.IO;
 
 public class PythonTrackerLauncher : MonoBehaviour
 {
-    [Header("Rutas")]
-    [SerializeField] private string pythonExecutablePath;
-    [SerializeField] private string trackerScriptPath;
-
     private Process trackerProcess;
 
     private void Start()
@@ -17,30 +13,51 @@ public class PythonTrackerLauncher : MonoBehaviour
 
     private void StartTracker()
     {
-        if (!File.Exists(pythonExecutablePath))
+        // Application.dataPath apunta a la carpeta Assets
+        // dentro del proyecto de Unity en el Editor.
+        string unityProjectPath =
+            Directory.GetParent(Application.dataPath).FullName;
+
+        string rootPath =
+            Directory.GetParent(unityProjectPath).FullName;
+
+        string trackerFolder =
+            Path.Combine(
+                rootPath,
+                "BodyPlatformerTracking",
+                "dist"
+            );
+
+        string trackerExecutable =
+            Path.Combine(
+                trackerFolder,
+                "pose_tracking.exe"
+            );
+
+        if (!File.Exists(trackerExecutable))
         {
             UnityEngine.Debug.LogError(
-                "No se encontró Python en: " + pythonExecutablePath
+                "No se encontró pose_tracking.exe en: " +
+                trackerExecutable
             );
+
             return;
         }
 
-        if (!File.Exists(trackerScriptPath))
-        {
-            UnityEngine.Debug.LogError(
-                "No se encontró pose_tracking.py en: " + trackerScriptPath
-            );
-            return;
-        }
+        ProcessStartInfo startInfo =
+            new ProcessStartInfo
+            {
+                FileName = trackerExecutable,
 
-        ProcessStartInfo startInfo = new ProcessStartInfo
-        {
-            FileName = pythonExecutablePath,
-            Arguments = $"\"{trackerScriptPath}\"",
-            WorkingDirectory = Path.GetDirectoryName(trackerScriptPath),
-            UseShellExecute = false,
-            CreateNoWindow = false
-        };
+                // Muy importante porque pose_tracking.exe
+                // busca pose_landmarker_lite.task
+                // usando una ruta relativa.
+                WorkingDirectory = trackerFolder,
+
+                UseShellExecute = false,
+
+                CreateNoWindow = false
+            };
 
         trackerProcess = new Process();
         trackerProcess.StartInfo = startInfo;
@@ -50,13 +67,14 @@ public class PythonTrackerLauncher : MonoBehaviour
             trackerProcess.Start();
 
             UnityEngine.Debug.Log(
-                "Tracker de MediaPipe iniciado."
+                "Body Tracker iniciado automáticamente."
             );
         }
         catch (System.Exception e)
         {
             UnityEngine.Debug.LogError(
-                "No se pudo iniciar el tracker: " + e.Message
+                "No se pudo iniciar Body Tracker: " +
+                e.Message
             );
         }
     }
@@ -85,7 +103,7 @@ public class PythonTrackerLauncher : MonoBehaviour
         }
         catch
         {
-            // Evitamos errores al cerrar Unity.
+            // Evitamos errores durante el cierre.
         }
 
         trackerProcess.Dispose();
