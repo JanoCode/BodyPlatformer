@@ -984,6 +984,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 772708667}
   m_CullTransparentMesh: 1
+--- !u!1 &992514831
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 992514833}
+  - component: {fileID: 992514832}
+  m_Layer: 0
+  m_Name: TrackerLauncher
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &992514832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 992514831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ffc6066e271e8d4e910b7d04c7c8c2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PythonTrackerLauncher
+  pythonExecutablePath: C:\Users\Aleja\OneDrive\Escritorio\Proyectos\BodyPlatformerFather\BodyPlatformerTracking\.venv\Scripts\python.exe
+  trackerScriptPath: C:\Users\Aleja\OneDrive\Escritorio\Proyectos\BodyPlatformerFather\BodyPlatformerTracking\pose_tracking.py
+--- !u!4 &992514833
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 992514831}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.37446, y: -0.62625, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1328334360
 GameObject:
   m_ObjectHideFlags: 0
@@ -1312,3 +1358,4 @@ SceneRoots:
   - {fileID: 1377862193}
   - {fileID: 268043671}
   - {fileID: 26078229}
+  - {fileID: 992514833}
