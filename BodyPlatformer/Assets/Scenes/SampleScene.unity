@@ -150,6 +150,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BodyColliders
   poseReceiver: {fileID: 1356920478}
   edgeRadius: 0.08
+  headHeightMultiplier: 0.9
+  headWidthMultiplier: 1.15
 --- !u!4 &245711364
 Transform:
   m_ObjectHideFlags: 0
@@ -845,7 +847,10 @@ MonoBehaviour:
   landmarkPrefab: {fileID: 2815894842200672081, guid: db2120523e5e21f43bb04a9b91134bd5, type: 3}
   worldWidth: 16
   worldHeight: 9
-  smoothing: 0.35
+  smoothing: 0.25
+  visibilityThreshold: 0.65
+  maxNormalizedMargin: 0.05
+  maxWorldJumpPerFrame: 1.2
 --- !u!4 &1356920479
 Transform:
   m_ObjectHideFlags: 0
