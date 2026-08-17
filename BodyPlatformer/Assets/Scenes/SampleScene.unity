@@ -325,6 +325,7 @@ GameObject:
   - component: {fileID: 331168369}
   - component: {fileID: 331168371}
   - component: {fileID: 331168370}
+  - component: {fileID: 331168372}
   m_Layer: 5
   m_Name: RawImage
   m_TagString: Untagged
@@ -346,10 +347,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1328334364}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0.0019073}
-  m_SizeDelta: {x: 1080, y: 462}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &331168370
 MonoBehaviour:
@@ -386,6 +387,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 331168368}
   m_CullTransparentMesh: 1
+--- !u!114 &331168372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 331168368}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.AspectRatioFitter
+  m_AspectMode: 3
+  m_AspectRatio: 1.7777778
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1013,8 +1028,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ffc6066e271e8d4e910b7d04c7c8c2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PythonTrackerLauncher
-  pythonExecutablePath: C:\Users\Aleja\OneDrive\Escritorio\Proyectos\BodyPlatformerFather\BodyPlatformerTracking\.venv\Scripts\python.exe
-  trackerScriptPath: C:\Users\Aleja\OneDrive\Escritorio\Proyectos\BodyPlatformerFather\BodyPlatformerTracking\pose_tracking.py
 --- !u!4 &992514833
 Transform:
   m_ObjectHideFlags: 0
@@ -1164,8 +1177,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PoseReceiver
   landmarkPrefab: {fileID: 2815894842200672081, guid: db2120523e5e21f43bb04a9b91134bd5, type: 3}
-  worldWidth: 16
-  worldHeight: 9
+  fallbackWorldWidth: 16
+  fallbackWorldHeight: 9
   smoothing: 0.25
   visibilityThreshold: 0.65
   maxNormalizedMargin: 0.05
@@ -1313,7 +1326,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1982186062
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1327,6 +1340,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WebcamDisplay
   display: {fileID: 331168370}
+  aspectRatioFitter: {fileID: 331168372}
 --- !u!4 &1982186063
 Transform:
   m_ObjectHideFlags: 0
@@ -1337,6 +1351,55 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 427.79507, y: 267.46054, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2094800531
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2094800533}
+  - component: {fileID: 2094800532}
+  m_Layer: 0
+  m_Name: CameraFrameSender
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2094800532
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2094800531}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee49d13ad42a3d440a3ab11ab09e5cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraFrameSender
+  webcamDisplay: {fileID: 1982186062}
+  trackingWidth: 640
+  trackingHeight: 360
+  trackingFPS: 15
+  jpegQuality: 55
+--- !u!4 &2094800533
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2094800531}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.00383, y: 0.41151, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1359,3 +1422,4 @@ SceneRoots:
   - {fileID: 268043671}
   - {fileID: 26078229}
   - {fileID: 992514833}
+  - {fileID: 2094800533}

@@ -25,8 +25,9 @@ public class PoseReceiver : MonoBehaviour
 
     [Header("Visualización")]
     [SerializeField] private GameObject landmarkPrefab;
-    [SerializeField] private float worldWidth = 16f;
-    [SerializeField] private float worldHeight = 9f;
+
+    [SerializeField] private float fallbackWorldWidth = 16f;
+    [SerializeField] private float fallbackWorldHeight = 9f;
 
     [Header("Tracking")]
     [SerializeField, Range(0.01f, 1f)]
@@ -54,8 +55,12 @@ public class PoseReceiver : MonoBehaviour
     private float lastPersonDetectedTime = -999f;
     private bool personDetected = false;
 
-    // Controla si los puntos azules deben mostrarse
     private bool debugLandmarksVisible = true;
+
+    private float runtimeWorldWidth;
+    private float runtimeWorldHeight;
+
+    private Camera mainCamera;
 
     private UdpClient udpClient;
     private Thread receiveThread;
@@ -65,6 +70,10 @@ public class PoseReceiver : MonoBehaviour
 
     private void Start()
     {
+        mainCamera = Camera.main;
+
+        CalculateWorldSize();
+
         CreateLandmarkObjects();
 
         udpClient = new UdpClient(5052);
@@ -74,6 +83,34 @@ public class PoseReceiver : MonoBehaviour
         receiveThread.Start();
 
         Debug.Log("Esperando datos de MediaPipe...");
+
+        Debug.Log(
+            "Tracking World Size: " +
+            runtimeWorldWidth +
+            " x " +
+            runtimeWorldHeight
+        );
+    }
+
+    private void CalculateWorldSize()
+    {
+        if (mainCamera != null && mainCamera.orthographic)
+        {
+            runtimeWorldHeight =
+                mainCamera.orthographicSize * 2f;
+
+            runtimeWorldWidth =
+                runtimeWorldHeight *
+                mainCamera.aspect;
+        }
+        else
+        {
+            runtimeWorldWidth =
+                fallbackWorldWidth;
+
+            runtimeWorldHeight =
+                fallbackWorldHeight;
+        }
     }
 
     private void CreateLandmarkObjects()
@@ -126,6 +163,10 @@ public class PoseReceiver : MonoBehaviour
 
     private void Update()
     {
+        // Por si cambia la resolución/aspect ratio
+        // de la Game View durante la ejecución.
+        CalculateWorldSize();
+
         string message = null;
 
         lock (messageLock)
@@ -158,11 +199,16 @@ public class PoseReceiver : MonoBehaviour
 
         foreach (Landmark landmark in pose.landmarks)
         {
-            if (landmark.id < 0 ||
-                landmark.id >= landmarkObjects.Length)
+            if (
+                landmark.id < 0 ||
+                landmark.id >= landmarkObjects.Length
+            )
+            {
                 continue;
+            }
 
-            bool wasValid = ProcessLandmark(landmark);
+            bool wasValid =
+                ProcessLandmark(landmark);
 
             if (wasValid)
             {
@@ -202,14 +248,26 @@ public class PoseReceiver : MonoBehaviour
             return false;
         }
 
+        // MediaPipe:
+        // x = 0 izquierda
+        // x = 1 derecha
+        // y = 0 arriba
+        // y = 1 abajo
+
         float x =
-            (landmark.x - 0.5f) * worldWidth;
+            (landmark.x - 0.5f) *
+            runtimeWorldWidth;
 
         float y =
-            (0.5f - landmark.y) * worldHeight;
+            (0.5f - landmark.y) *
+            runtimeWorldHeight;
 
         Vector3 targetPosition =
-            new Vector3(x, y, 0f);
+            new Vector3(
+                x,
+                y,
+                0f
+            );
 
         if (!landmarkInitialized[id])
         {
@@ -218,7 +276,9 @@ public class PoseReceiver : MonoBehaviour
 
             landmarkInitialized[id] = true;
             landmarkVisible[id] = true;
-            lastValidTime[id] = Time.time;
+
+            lastValidTime[id] =
+                Time.time;
 
             landmarkObject.SetActive(
                 debugLandmarksVisible
@@ -239,7 +299,9 @@ public class PoseReceiver : MonoBehaviour
         }
 
         landmarkVisible[id] = true;
-        lastValidTime[id] = Time.time;
+
+        lastValidTime[id] =
+            Time.time;
 
         landmarkObject.SetActive(
             debugLandmarksVisible
@@ -263,10 +325,13 @@ public class PoseReceiver : MonoBehaviour
                 continue;
 
             float timeSinceLastValid =
-                Time.time - lastValidTime[i];
+                Time.time -
+                lastValidTime[i];
 
-            if (timeSinceLastValid >
-                lostLandmarkGraceTime)
+            if (
+                timeSinceLastValid >
+                lostLandmarkGraceTime
+            )
             {
                 HideLandmark(i);
             }
@@ -279,15 +344,21 @@ public class PoseReceiver : MonoBehaviour
             return;
 
         float timeSinceLastPerson =
-            Time.time - lastPersonDetectedTime;
+            Time.time -
+            lastPersonDetectedTime;
 
-        if (timeSinceLastPerson > personLostTime)
+        if (
+            timeSinceLastPerson >
+            personLostTime
+        )
         {
             personDetected = false;
 
             HideAllLandmarks();
 
-            Debug.Log("Persona perdida");
+            Debug.Log(
+                "Persona perdida"
+            );
         }
     }
 
@@ -306,7 +377,8 @@ public class PoseReceiver : MonoBehaviour
 
         if (landmarkObjects[id] != null)
         {
-            landmarkObjects[id].SetActive(false);
+            landmarkObjects[id]
+                .SetActive(false);
         }
     }
 
@@ -317,9 +389,13 @@ public class PoseReceiver : MonoBehaviour
 
     public bool IsLandmarkVisible(int index)
     {
-        if (index < 0 ||
-            index >= landmarkVisible.Length)
+        if (
+            index < 0 ||
+            index >= landmarkVisible.Length
+        )
+        {
             return false;
+        }
 
         return landmarkVisible[index];
     }
@@ -349,8 +425,10 @@ public class PoseReceiver : MonoBehaviour
     {
         udpClient?.Close();
 
-        if (receiveThread != null &&
-            receiveThread.IsAlive)
+        if (
+            receiveThread != null &&
+            receiveThread.IsAlive
+        )
         {
             receiveThread.Interrupt();
         }
