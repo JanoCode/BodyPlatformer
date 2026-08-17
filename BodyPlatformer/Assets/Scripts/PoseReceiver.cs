@@ -54,6 +54,9 @@ public class PoseReceiver : MonoBehaviour
     private float lastPersonDetectedTime = -999f;
     private bool personDetected = false;
 
+    // Controla si los puntos azules deben mostrarse
+    private bool debugLandmarksVisible = true;
+
     private UdpClient udpClient;
     private Thread receiveThread;
 
@@ -217,7 +220,9 @@ public class PoseReceiver : MonoBehaviour
             landmarkVisible[id] = true;
             lastValidTime[id] = Time.time;
 
-            landmarkObject.SetActive(true);
+            landmarkObject.SetActive(
+                debugLandmarksVisible
+            );
 
             return true;
         }
@@ -236,7 +241,9 @@ public class PoseReceiver : MonoBehaviour
         landmarkVisible[id] = true;
         lastValidTime[id] = Time.time;
 
-        landmarkObject.SetActive(true);
+        landmarkObject.SetActive(
+            debugLandmarksVisible
+        );
 
         landmarkObject.transform.position =
             Vector3.Lerp(
@@ -320,6 +327,22 @@ public class PoseReceiver : MonoBehaviour
     public bool IsPersonDetected()
     {
         return personDetected;
+    }
+
+    public void SetLandmarksVisible(bool visible)
+    {
+        debugLandmarksVisible = visible;
+
+        for (int i = 0; i < landmarkObjects.Length; i++)
+        {
+            if (landmarkObjects[i] == null)
+                continue;
+
+            landmarkObjects[i].SetActive(
+                debugLandmarksVisible &&
+                landmarkVisible[i]
+            );
+        }
     }
 
     private void OnDestroy()
