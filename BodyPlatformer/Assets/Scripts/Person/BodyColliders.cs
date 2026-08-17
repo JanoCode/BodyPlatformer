@@ -1,16 +1,23 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+[DefaultExecutionOrder(-100)]
 public class BodyColliders : MonoBehaviour
 {
-    [SerializeField] private PoseReceiver poseReceiver;
+    [SerializeField]
+    private PoseReceiver poseReceiver;
 
     [Header("Edge Colliders")]
-    [SerializeField] private float edgeRadius = 0.03f;
+    [SerializeField]
+    private float edgeRadius = 0.03f;
 
     [Header("Head")]
-    [SerializeField] private float headHeightMultiplier = 0.55f;
-    [SerializeField] private float headWidthMultiplier = 1.15f;
+    [SerializeField]
+    private float headHeightMultiplier = 0.55f;
+
+    [SerializeField]
+    private float headWidthMultiplier = 1.15f;
+
 
     private EdgeCollider2D leftArmCollider;
     private EdgeCollider2D shouldersCollider;
@@ -25,67 +32,75 @@ public class BodyColliders : MonoBehaviour
     private EdgeCollider2D rightHandCollider;
 
 
+    // =========================================================
+    // START
+    // =========================================================
+
     private void Start()
     {
-        int bodyLayer = LayerMask.NameToLayer("Body");
+        int bodyLayer =
+            LayerMask.NameToLayer("Body");
 
         leftArmCollider =
-            CreateEdgeCollider(
+            CreateBodyPlatform(
                 "LeftArmCollider",
                 bodyLayer
             );
 
         shouldersCollider =
-            CreateEdgeCollider(
+            CreateBodyPlatform(
                 "ShouldersCollider",
                 bodyLayer
             );
 
         rightArmCollider =
-            CreateEdgeCollider(
+            CreateBodyPlatform(
                 "RightArmCollider",
                 bodyLayer
             );
 
         leftLegCollider =
-            CreateEdgeCollider(
+            CreateBodyPlatform(
                 "LeftLegCollider",
                 bodyLayer
             );
 
         rightLegCollider =
-            CreateEdgeCollider(
+            CreateBodyPlatform(
                 "RightLegCollider",
                 bodyLayer
             );
 
         headCollider =
-            CreateEdgeCollider(
+            CreateBodyPlatform(
                 "HeadCollider",
                 bodyLayer
             );
 
         leftHandCollider =
-            CreateEdgeCollider(
+            CreateBodyPlatform(
                 "LeftHandCollider",
                 bodyLayer
             );
 
         rightHandCollider =
-            CreateEdgeCollider(
+            CreateBodyPlatform(
                 "RightHandCollider",
                 bodyLayer
             );
 
-        // Las manos empiezan desactivadas.
-        // HandPlatformController decidirá cuándo
-        // pueden funcionar como plataforma.
+        // Las manos solo se activarán cuando
+        // HandPlatformController diga que son utilizables.
         leftHandCollider.enabled = false;
         rightHandCollider.enabled = false;
     }
 
 
-    private EdgeCollider2D CreateEdgeCollider(
+    // =========================================================
+    // CREAR PLATAFORMA CORPORAL
+    // =========================================================
+
+    private EdgeCollider2D CreateBodyPlatform(
         string objectName,
         int layer
     )
@@ -106,14 +121,36 @@ public class BodyColliders : MonoBehaviour
 
         obj.layer = layer;
 
+
+        // Rigidbody cinemático.
+        Rigidbody2D rb =
+            obj.AddComponent<Rigidbody2D>();
+
+        rb.bodyType =
+            RigidbodyType2D.Kinematic;
+
+        rb.gravityScale = 0f;
+
+        rb.interpolation =
+            RigidbodyInterpolation2D.Interpolate;
+
+        rb.freezeRotation = true;
+
+
+        // Collider.
         EdgeCollider2D edge =
             obj.AddComponent<EdgeCollider2D>();
 
-        edge.edgeRadius = edgeRadius;
+        edge.edgeRadius =
+            edgeRadius;
 
         return edge;
     }
 
+
+    // =========================================================
+    // FIXED UPDATE
+    // =========================================================
 
     private void FixedUpdate()
     {
@@ -147,40 +184,45 @@ public class BodyColliders : MonoBehaviour
 
         UpdateHead(points);
 
-        // Ahora las manos utilizan
-        // los 21 landmarks detallados.
         UpdateLeftHand();
         UpdateRightHand();
     }
 
 
+    // =========================================================
+    // DESACTIVAR
+    // =========================================================
+
     private void DisableAllColliders()
     {
-        if (leftArmCollider != null)
-            leftArmCollider.enabled = false;
+        DisableCollider(leftArmCollider);
+        DisableCollider(shouldersCollider);
+        DisableCollider(rightArmCollider);
 
-        if (shouldersCollider != null)
-            shouldersCollider.enabled = false;
+        DisableCollider(leftLegCollider);
+        DisableCollider(rightLegCollider);
 
-        if (rightArmCollider != null)
-            rightArmCollider.enabled = false;
+        DisableCollider(headCollider);
 
-        if (leftLegCollider != null)
-            leftLegCollider.enabled = false;
-
-        if (rightLegCollider != null)
-            rightLegCollider.enabled = false;
-
-        if (headCollider != null)
-            headCollider.enabled = false;
-
-        if (leftHandCollider != null)
-            leftHandCollider.enabled = false;
-
-        if (rightHandCollider != null)
-            rightHandCollider.enabled = false;
+        DisableCollider(leftHandCollider);
+        DisableCollider(rightHandCollider);
     }
 
+
+    private void DisableCollider(
+        EdgeCollider2D collider
+    )
+    {
+        if (collider != null)
+        {
+            collider.enabled = false;
+        }
+    }
+
+
+    // =========================================================
+    // VISIBILIDAD
+    // =========================================================
 
     private bool AreVisible(
         params int[] indexes
@@ -210,11 +252,7 @@ public class BodyColliders : MonoBehaviour
     )
     {
         bool visible =
-            AreVisible(
-                15,
-                13,
-                11
-            );
+            AreVisible(15, 13, 11);
 
         leftArmCollider.enabled =
             visible;
@@ -222,23 +260,30 @@ public class BodyColliders : MonoBehaviour
         if (!visible)
             return;
 
+        Vector2 wrist =
+            points[15].transform.position;
+
+        Vector2 elbow =
+            points[13].transform.position;
+
+        Vector2 shoulder =
+            points[11].transform.position;
+
+        Vector2 center =
+            (wrist + elbow + shoulder) /
+            3f;
+
+        MovePlatform(
+            leftArmCollider,
+            center
+        );
+
         leftArmCollider.points =
             new Vector2[]
             {
-                GetLocalPoint(
-                    points[15],
-                    leftArmCollider
-                ),
-
-                GetLocalPoint(
-                    points[13],
-                    leftArmCollider
-                ),
-
-                GetLocalPoint(
-                    points[11],
-                    leftArmCollider
-                )
+                wrist - center,
+                elbow - center,
+                shoulder - center
             };
     }
 
@@ -252,10 +297,7 @@ public class BodyColliders : MonoBehaviour
     )
     {
         bool visible =
-            AreVisible(
-                11,
-                12
-            );
+            AreVisible(11, 12);
 
         shouldersCollider.enabled =
             visible;
@@ -263,18 +305,25 @@ public class BodyColliders : MonoBehaviour
         if (!visible)
             return;
 
+        Vector2 left =
+            points[11].transform.position;
+
+        Vector2 right =
+            points[12].transform.position;
+
+        Vector2 center =
+            (left + right) * 0.5f;
+
+        MovePlatform(
+            shouldersCollider,
+            center
+        );
+
         shouldersCollider.points =
             new Vector2[]
             {
-                GetLocalPoint(
-                    points[11],
-                    shouldersCollider
-                ),
-
-                GetLocalPoint(
-                    points[12],
-                    shouldersCollider
-                )
+                left - center,
+                right - center
             };
     }
 
@@ -288,11 +337,7 @@ public class BodyColliders : MonoBehaviour
     )
     {
         bool visible =
-            AreVisible(
-                12,
-                14,
-                16
-            );
+            AreVisible(12, 14, 16);
 
         rightArmCollider.enabled =
             visible;
@@ -300,23 +345,30 @@ public class BodyColliders : MonoBehaviour
         if (!visible)
             return;
 
+        Vector2 shoulder =
+            points[12].transform.position;
+
+        Vector2 elbow =
+            points[14].transform.position;
+
+        Vector2 wrist =
+            points[16].transform.position;
+
+        Vector2 center =
+            (shoulder + elbow + wrist) /
+            3f;
+
+        MovePlatform(
+            rightArmCollider,
+            center
+        );
+
         rightArmCollider.points =
             new Vector2[]
             {
-                GetLocalPoint(
-                    points[12],
-                    rightArmCollider
-                ),
-
-                GetLocalPoint(
-                    points[14],
-                    rightArmCollider
-                ),
-
-                GetLocalPoint(
-                    points[16],
-                    rightArmCollider
-                )
+                shoulder - center,
+                elbow - center,
+                wrist - center
             };
     }
 
@@ -330,11 +382,7 @@ public class BodyColliders : MonoBehaviour
     )
     {
         bool visible =
-            AreVisible(
-                23,
-                25,
-                27
-            );
+            AreVisible(23, 25, 27);
 
         leftLegCollider.enabled =
             visible;
@@ -342,23 +390,30 @@ public class BodyColliders : MonoBehaviour
         if (!visible)
             return;
 
+        Vector2 hip =
+            points[23].transform.position;
+
+        Vector2 knee =
+            points[25].transform.position;
+
+        Vector2 ankle =
+            points[27].transform.position;
+
+        Vector2 center =
+            (hip + knee + ankle) /
+            3f;
+
+        MovePlatform(
+            leftLegCollider,
+            center
+        );
+
         leftLegCollider.points =
             new Vector2[]
             {
-                GetLocalPoint(
-                    points[23],
-                    leftLegCollider
-                ),
-
-                GetLocalPoint(
-                    points[25],
-                    leftLegCollider
-                ),
-
-                GetLocalPoint(
-                    points[27],
-                    leftLegCollider
-                )
+                hip - center,
+                knee - center,
+                ankle - center
             };
     }
 
@@ -372,11 +427,7 @@ public class BodyColliders : MonoBehaviour
     )
     {
         bool visible =
-            AreVisible(
-                24,
-                26,
-                28
-            );
+            AreVisible(24, 26, 28);
 
         rightLegCollider.enabled =
             visible;
@@ -384,23 +435,30 @@ public class BodyColliders : MonoBehaviour
         if (!visible)
             return;
 
+        Vector2 hip =
+            points[24].transform.position;
+
+        Vector2 knee =
+            points[26].transform.position;
+
+        Vector2 ankle =
+            points[28].transform.position;
+
+        Vector2 center =
+            (hip + knee + ankle) /
+            3f;
+
+        MovePlatform(
+            rightLegCollider,
+            center
+        );
+
         rightLegCollider.points =
             new Vector2[]
             {
-                GetLocalPoint(
-                    points[24],
-                    rightLegCollider
-                ),
-
-                GetLocalPoint(
-                    points[26],
-                    rightLegCollider
-                ),
-
-                GetLocalPoint(
-                    points[28],
-                    rightLegCollider
-                )
+                hip - center,
+                knee - center,
+                ankle - center
             };
     }
 
@@ -414,11 +472,7 @@ public class BodyColliders : MonoBehaviour
     )
     {
         bool visible =
-            AreVisible(
-                0,
-                7,
-                8
-            );
+            AreVisible(0, 7, 8);
 
         headCollider.enabled =
             visible;
@@ -426,17 +480,13 @@ public class BodyColliders : MonoBehaviour
         if (!visible)
             return;
 
-        Vector3 leftEar =
-            points[7]
-                .transform
-                .position;
+        Vector2 leftEar =
+            points[7].transform.position;
 
-        Vector3 rightEar =
-            points[8]
-                .transform
-                .position;
+        Vector2 rightEar =
+            points[8].transform.position;
 
-        Vector3 center =
+        Vector2 center =
             (leftEar + rightEar) *
             0.5f;
 
@@ -479,26 +529,22 @@ public class BodyColliders : MonoBehaviour
                 Mathf.PI *
                 (1f - t);
 
-            Vector3 worldPoint =
-                new Vector3(
-                    center.x +
+            // Ahora son coordenadas LOCALES
+            // relativas al centro del Rigidbody.
+            edgePoints[i] =
+                new Vector2(
                     Mathf.Cos(angle) *
                     radiusX,
 
-                    center.y +
                     Mathf.Sin(angle) *
-                    radiusY,
-
-                    0f
+                    radiusY
                 );
-
-            edgePoints[i] =
-                headCollider
-                    .transform
-                    .InverseTransformPoint(
-                        worldPoint
-                    );
         }
+
+        MovePlatform(
+            headCollider,
+            center
+        );
 
         headCollider.points =
             edgePoints;
@@ -562,7 +608,7 @@ public class BodyColliders : MonoBehaviour
 
 
     // =========================================================
-    // CREAR SUPERFICIE COMPLETA DE LA MANO
+    // SUPERFICIE DETALLADA DE MANO
     // =========================================================
 
     private void UpdateDetailedHandCollider(
@@ -587,29 +633,28 @@ public class BodyColliders : MonoBehaviour
             i++
         )
         {
-            if (handPoints[i] == null)
+            if (
+                handPoints[i] == null ||
+                !handPoints[i]
+                    .activeInHierarchy
+            )
+            {
                 continue;
+            }
 
-            Vector3 position =
+            Vector2 position =
                 handPoints[i]
                     .transform
                     .position;
 
             worldPoints.Add(
-                new Vector2(
-                    position.x,
-                    position.y
-                )
+                position
             );
         }
 
         if (worldPoints.Count < 3)
             return;
 
-
-        // -----------------------------------------
-        // Sacamos el contorno exterior de la mano
-        // -----------------------------------------
 
         List<Vector2> hull =
             CalculateConvexHull(
@@ -619,10 +664,6 @@ public class BodyColliders : MonoBehaviour
         if (hull.Count < 2)
             return;
 
-
-        // -----------------------------------------
-        // Buscamos izquierda y derecha del contorno
-        // -----------------------------------------
 
         int leftIndex = 0;
         int rightIndex = 0;
@@ -651,13 +692,6 @@ public class BodyColliders : MonoBehaviour
         }
 
 
-        // Hay dos caminos posibles entre
-        // izquierda y derecha del contorno.
-        //
-        // Elegimos el que esté más arriba,
-        // porque esa será la superficie sobre
-        // la que puede pararse el Player.
-
         List<Vector2> pathA =
             GetHullPath(
                 hull,
@@ -674,20 +708,16 @@ public class BodyColliders : MonoBehaviour
                 -1
             );
 
+
         List<Vector2> surface =
             GetAverageY(pathA) >=
             GetAverageY(pathB)
                 ? pathA
                 : pathB;
 
-
         if (surface.Count < 2)
             return;
 
-
-        // -----------------------------------------
-        // Centro de la superficie
-        // -----------------------------------------
 
         Vector2 center =
             Vector2.zero;
@@ -704,28 +734,16 @@ public class BodyColliders : MonoBehaviour
             surface.Count;
 
 
-        // IMPORTANTE:
-        // movemos el Transform del collider.
-        //
-        // Esto permite que posteriormente
-        // podamos tratar la mano como una
-        // plataforma móvil real.
-
-        handCollider
-            .transform
-            .position =
-            new Vector3(
-                center.x,
-                center.y,
-                0f
-            );
+        // El Rigidbody cinemático se mueve
+        // hacia el centro de la mano.
+        MovePlatform(
+            handCollider,
+            center
+        );
 
 
-        // -----------------------------------------
-        // Convertimos superficie a coordenadas
-        // locales del EdgeCollider
-        // -----------------------------------------
-
+        // Convertimos los puntos del mundo
+        // en offsets locales respecto del centro.
         Vector2[] localSurface =
             new Vector2[
                 surface.Count
@@ -737,38 +755,51 @@ public class BodyColliders : MonoBehaviour
             i++
         )
         {
-            Vector3 local =
-                handCollider
-                    .transform
-                    .InverseTransformPoint(
-                        new Vector3(
-                            surface[i].x,
-                            surface[i].y,
-                            0f
-                        )
-                    );
-
             localSurface[i] =
-                new Vector2(
-                    local.x,
-                    local.y
-                );
+                surface[i] -
+                center;
         }
 
         handCollider.points =
             localSurface;
 
-        // OJO:
-        // NO activamos el collider aquí.
+
+        // IMPORTANTE:
         //
-        // HandPlatformController es quien
-        // decide si debe estar activo según
-        // Flat / Sideways.
+        // aquí NO ponemos:
+        // handCollider.enabled = true;
+        //
+        // HandPlatformController sigue siendo
+        // quien decide Flat / Sideways.
     }
 
 
     // =========================================================
-    // CONVEX HULL
+    // MOVER RIGIDBODY CINEMÁTICO
+    // =========================================================
+
+    private void MovePlatform(
+        EdgeCollider2D collider,
+        Vector2 targetPosition
+    )
+    {
+        if (collider == null)
+            return;
+
+        Rigidbody2D rb =
+            collider.GetComponent<Rigidbody2D>();
+
+        if (rb == null)
+            return;
+
+        rb.MovePosition(
+            targetPosition
+        );
+    }
+
+
+    // =========================================================
+    // CONVEX HULL MANO
     // =========================================================
 
     private List<Vector2> CalculateConvexHull(
@@ -791,9 +822,10 @@ public class BodyColliders : MonoBehaviour
                 if (compareX != 0)
                     return compareX;
 
-                return a.y.CompareTo(
-                    b.y
-                );
+                return
+                    a.y.CompareTo(
+                        b.y
+                    );
             }
         );
 
@@ -815,9 +847,11 @@ public class BodyColliders : MonoBehaviour
                     lower[
                         lower.Count - 2
                     ],
+
                     lower[
                         lower.Count - 1
                     ],
+
                     point
                 ) <= 0f
             )
@@ -837,7 +871,9 @@ public class BodyColliders : MonoBehaviour
         for (
             int i =
                 sorted.Count - 1;
+
             i >= 0;
+
             i--
         )
         {
@@ -850,9 +886,11 @@ public class BodyColliders : MonoBehaviour
                     upper[
                         upper.Count - 2
                     ],
+
                     upper[
                         upper.Count - 1
                     ],
+
                     point
                 ) <= 0f
             )
@@ -901,7 +939,7 @@ public class BodyColliders : MonoBehaviour
 
 
     // =========================================================
-    // OBTENER UN CAMINO DEL CONTORNO
+    // CAMINO DEL CONTORNO
     // =========================================================
 
     private List<Vector2> GetHullPath(
@@ -914,7 +952,8 @@ public class BodyColliders : MonoBehaviour
         List<Vector2> path =
             new List<Vector2>();
 
-        int index = start;
+        int index =
+            start;
 
         path.Add(
             hull[index]
@@ -930,11 +969,16 @@ public class BodyColliders : MonoBehaviour
         {
             index += direction;
 
-            if (index >= hull.Count)
+            if (
+                index >=
+                hull.Count
+            )
             {
                 index = 0;
             }
-            else if (index < 0)
+            else if (
+                index < 0
+            )
             {
                 index =
                     hull.Count - 1;
@@ -971,24 +1015,5 @@ public class BodyColliders : MonoBehaviour
         return
             total /
             points.Count;
-    }
-
-
-    // =========================================================
-    // UTILIDAD
-    // =========================================================
-
-    private Vector2 GetLocalPoint(
-        GameObject landmark,
-        EdgeCollider2D collider
-    )
-    {
-        return collider
-            .transform
-            .InverseTransformPoint(
-                landmark
-                    .transform
-                    .position
-            );
     }
 }
