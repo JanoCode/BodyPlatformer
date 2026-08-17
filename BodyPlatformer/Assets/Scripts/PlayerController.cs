@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float moveSpeed = 4f;
     [SerializeField] private float jumpForce = 7f;
 
-    [Header("Detección")]
+    [Header("Cuerpo")]
     [SerializeField] private string bodyLayerName = "Body";
 
     private Rigidbody2D rb;
@@ -15,16 +15,16 @@ public class PlayerController : MonoBehaviour
     private float moveInput;
     private bool jumpRequested;
 
-    private int bodyContacts;
-
+    private int bodyContacts = 0;
     private Vector2 groundNormal = Vector2.up;
-    private bool grounded;
+
+    private Transform currentBodySurface;
+    private Vector3 lastSurfacePosition;
+    private Vector2 surfaceVelocity;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-
-        // Evita que la cápsula se caiga/rote físicamente.
         rb.freezeRotation = true;
     }
 
@@ -48,7 +48,9 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        grounded = bodyContacts > 0;
+        bool grounded = bodyContacts > 0;
+
+        UpdateSurfaceVelocity();
 
         if (grounded)
         {
@@ -69,30 +71,28 @@ public class PlayerController : MonoBehaviour
 
     private void MoveAlongSurface()
     {
-        // La tangente es perpendicular a la normal del suelo.
         Vector2 tangent = new Vector2(
             groundNormal.y,
             -groundNormal.x
         );
 
-        // Nos aseguramos de que "derecha" en el stick
-        // siga significando derecha en pantalla.
         if (tangent.x < 0)
         {
             tangent = -tangent;
         }
 
-        Vector2 movement =
-            tangent.normalized * moveInput * moveSpeed;
+        tangent.Normalize();
 
-        // Conservamos una pequeña componente normal,
-        // pero desplazamos principalmente sobre la superficie.
-        rb.linearVelocity = movement;
+        Vector2 playerMovement =
+            tangent * moveInput * moveSpeed;
+
+        // Sumamos el movimiento de la superficie
+        rb.linearVelocity =
+            playerMovement + surfaceVelocity;
     }
 
     private void MoveInAir()
     {
-        // En el aire seguimos teniendo control horizontal.
         rb.linearVelocity = new Vector2(
             moveInput * moveSpeed,
             rb.linearVelocity.y
@@ -101,59 +101,86 @@ public class PlayerController : MonoBehaviour
 
     private void Jump()
     {
-        // Saltamos principalmente hacia arriba.
         rb.linearVelocity = new Vector2(
             rb.linearVelocity.x,
             jumpForce
         );
 
         bodyContacts = 0;
-        grounded = false;
+        currentBodySurface = null;
+        surfaceVelocity = Vector2.zero;
+    }
+
+    private void UpdateSurfaceVelocity()
+    {
+        if (currentBodySurface == null)
+        {
+            surfaceVelocity = Vector2.zero;
+            return;
+        }
+
+        Vector3 currentPosition =
+            currentBodySurface.position;
+
+        Vector3 movement =
+            currentPosition - lastSurfacePosition;
+
+        surfaceVelocity =
+            movement / Time.fixedDeltaTime;
+
+        lastSurfacePosition =
+            currentPosition;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.layer !=
-            LayerMask.NameToLayer(bodyLayerName))
-        {
+        if (!IsBody(collision.gameObject))
             return;
-        }
 
         bodyContacts++;
+
+        currentBodySurface =
+            collision.transform;
+
+        lastSurfacePosition =
+            currentBodySurface.position;
 
         UpdateGroundNormal(collision);
     }
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        if (collision.gameObject.layer !=
-            LayerMask.NameToLayer(bodyLayerName))
-        {
+        if (!IsBody(collision.gameObject))
             return;
-        }
+
+        currentBodySurface =
+            collision.transform;
 
         UpdateGroundNormal(collision);
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
-        if (collision.gameObject.layer !=
-            LayerMask.NameToLayer(bodyLayerName))
-        {
+        if (!IsBody(collision.gameObject))
             return;
-        }
 
         bodyContacts--;
 
         if (bodyContacts < 0)
-        {
             bodyContacts = 0;
-        }
 
         if (bodyContacts == 0)
         {
+            currentBodySurface = null;
+            surfaceVelocity = Vector2.zero;
             groundNormal = Vector2.up;
         }
+    }
+
+    private bool IsBody(GameObject obj)
+    {
+        return obj.layer ==
+            LayerMask.NameToLayer(bodyLayerName);
     }
 
     private void UpdateGroundNormal(Collision2D collision)
@@ -162,25 +189,27 @@ public class PlayerController : MonoBehaviour
             return;
 
         Vector2 bestNormal = Vector2.up;
-        float bestUpValue = -1f;
+        float bestUp = -1f;
 
         for (int i = 0; i < collision.contactCount; i++)
         {
-            ContactPoint2D contact = collision.GetContact(i);
+            ContactPoint2D contact =
+                collision.GetContact(i);
 
-            // Buscamos la superficie cuya normal apunte más hacia arriba.
-            if (contact.normal.y > bestUpValue)
+            if (contact.normal.y > bestUp)
             {
-                bestUpValue = contact.normal.y;
-                bestNormal = contact.normal;
+                bestUp =
+                    contact.normal.y;
+
+                bestNormal =
+                    contact.normal;
             }
         }
 
-        // Solo consideramos "suelo" una superficie
-        // que tenga algo de orientación hacia arriba.
         if (bestNormal.y > 0.1f)
         {
-            groundNormal = bestNormal;
+            groundNormal =
+                bestNormal;
         }
     }
 }

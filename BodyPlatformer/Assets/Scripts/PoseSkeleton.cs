@@ -7,7 +7,7 @@ public class PoseSkeleton : MonoBehaviour
     [SerializeField] private float lineWidth = 0.05f;
 
     [Header("Head")]
-    [SerializeField] private float headHeightMultiplier = 0.9f;
+    [SerializeField] private float headHeightMultiplier = 0.55f;
     [SerializeField] private float headWidthMultiplier = 1.15f;
 
     [Header("Hands")]
@@ -41,7 +41,7 @@ public class PoseSkeleton : MonoBehaviour
     {
         CreateBodyLines();
 
-        headLine = CreateLine("HeadLine", 5);
+        headLine = CreateLine("HeadLine", 21);
         leftHandLine = CreateLine("LeftHandLine", 2);
         rightHandLine = CreateLine("RightHandLine", 2);
     }
@@ -148,65 +148,44 @@ public class PoseSkeleton : MonoBehaviour
         if (!visible)
             return;
 
-        Vector3 leftEar =
-            points[7].transform.position;
-
-        Vector3 rightEar =
-            points[8].transform.position;
+        Vector3 leftEar = points[7].transform.position;
+        Vector3 rightEar = points[8].transform.position;
 
         Vector3 center =
             (leftEar + rightEar) * 0.5f;
 
         float width =
-            Vector2.Distance(leftEar, rightEar)
-            * headWidthMultiplier;
+            Vector2.Distance(leftEar, rightEar) *
+            headWidthMultiplier;
 
         float height =
             width * headHeightMultiplier;
 
-        float halfWidth =
-            width * 0.5f;
+        float radiusX = width * 0.5f;
+        float radiusY = height;
 
-        Vector3 left =
-            new Vector3(
-                center.x - halfWidth,
-                center.y,
-                0f
+        int segments = 20;
+
+        headLine.positionCount = segments + 1;
+
+        for (int i = 0; i <= segments; i++)
+        {
+            float t = (float)i / segments;
+
+            // Va desde 180° hasta 0°
+            float angle = Mathf.PI * (1f - t);
+
+            float x =
+                center.x + Mathf.Cos(angle) * radiusX;
+
+            float y =
+                center.y + Mathf.Sin(angle) * radiusY;
+
+            headLine.SetPosition(
+                i,
+                new Vector3(x, y, 0f)
             );
-
-        Vector3 upperLeft =
-            new Vector3(
-                center.x - halfWidth * 0.5f,
-                center.y + height * 0.65f,
-                0f
-            );
-
-        Vector3 top =
-            new Vector3(
-                center.x,
-                center.y + height,
-                0f
-            );
-
-        Vector3 upperRight =
-            new Vector3(
-                center.x + halfWidth * 0.5f,
-                center.y + height * 0.65f,
-                0f
-            );
-
-        Vector3 right =
-            new Vector3(
-                center.x + halfWidth,
-                center.y,
-                0f
-            );
-
-        headLine.SetPosition(0, left);
-        headLine.SetPosition(1, upperLeft);
-        headLine.SetPosition(2, top);
-        headLine.SetPosition(3, upperRight);
-        headLine.SetPosition(4, right);
+        }
     }
 
     private void UpdateLeftHand(GameObject[] points)

@@ -42,11 +42,17 @@ public class PoseReceiver : MonoBehaviour
     [Header("Pérdida temporal")]
     [SerializeField] private float lostLandmarkGraceTime = 0.2f;
 
+    [Header("Detección de persona")]
+    [SerializeField] private float personLostTime = 0.5f;
+
     private GameObject[] landmarkObjects = new GameObject[33];
     private bool[] landmarkVisible = new bool[33];
     private bool[] landmarkInitialized = new bool[33];
 
     private float[] lastValidTime = new float[33];
+
+    private float lastPersonDetectedTime = -999f;
+    private bool personDetected = false;
 
     private UdpClient udpClient;
     private Thread receiveThread;
@@ -131,6 +137,7 @@ public class PoseReceiver : MonoBehaviour
         if (message == null)
         {
             UpdateLostLandmarks();
+            UpdatePersonDetection();
             return;
         }
 
@@ -140,8 +147,11 @@ public class PoseReceiver : MonoBehaviour
         if (pose == null || pose.landmarks == null)
         {
             UpdateLostLandmarks();
+            UpdatePersonDetection();
             return;
         }
+
+        bool anyValidLandmark = false;
 
         foreach (Landmark landmark in pose.landmarks)
         {
@@ -149,13 +159,25 @@ public class PoseReceiver : MonoBehaviour
                 landmark.id >= landmarkObjects.Length)
                 continue;
 
-            ProcessLandmark(landmark);
+            bool wasValid = ProcessLandmark(landmark);
+
+            if (wasValid)
+            {
+                anyValidLandmark = true;
+            }
+        }
+
+        if (anyValidLandmark)
+        {
+            lastPersonDetectedTime = Time.time;
+            personDetected = true;
         }
 
         UpdateLostLandmarks();
+        UpdatePersonDetection();
     }
 
-    private void ProcessLandmark(Landmark landmark)
+    private bool ProcessLandmark(Landmark landmark)
     {
         int id = landmark.id;
 
@@ -163,7 +185,7 @@ public class PoseReceiver : MonoBehaviour
             landmarkObjects[id];
 
         if (landmarkObject == null)
-            return;
+            return false;
 
         bool valid =
             landmark.visibility >= visibilityThreshold &&
@@ -174,7 +196,7 @@ public class PoseReceiver : MonoBehaviour
 
         if (!valid)
         {
-            return;
+            return false;
         }
 
         float x =
@@ -197,7 +219,7 @@ public class PoseReceiver : MonoBehaviour
 
             landmarkObject.SetActive(true);
 
-            return;
+            return true;
         }
 
         float distance =
@@ -208,7 +230,7 @@ public class PoseReceiver : MonoBehaviour
 
         if (distance > maxWorldJumpPerFrame)
         {
-            return;
+            return false;
         }
 
         landmarkVisible[id] = true;
@@ -222,6 +244,8 @@ public class PoseReceiver : MonoBehaviour
                 targetPosition,
                 smoothing
             );
+
+        return true;
     }
 
     private void UpdateLostLandmarks()
@@ -239,6 +263,32 @@ public class PoseReceiver : MonoBehaviour
             {
                 HideLandmark(i);
             }
+        }
+    }
+
+    private void UpdatePersonDetection()
+    {
+        if (!personDetected)
+            return;
+
+        float timeSinceLastPerson =
+            Time.time - lastPersonDetectedTime;
+
+        if (timeSinceLastPerson > personLostTime)
+        {
+            personDetected = false;
+
+            HideAllLandmarks();
+
+            Debug.Log("Persona perdida");
+        }
+    }
+
+    private void HideAllLandmarks()
+    {
+        for (int i = 0; i < landmarkObjects.Length; i++)
+        {
+            HideLandmark(i);
         }
     }
 
@@ -265,6 +315,11 @@ public class PoseReceiver : MonoBehaviour
             return false;
 
         return landmarkVisible[index];
+    }
+
+    public bool IsPersonDetected()
+    {
+        return personDetected;
     }
 
     private void OnDestroy()

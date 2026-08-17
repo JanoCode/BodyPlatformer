@@ -152,6 +152,8 @@ MonoBehaviour:
   edgeRadius: 0.08
   headHeightMultiplier: 0.9
   headWidthMultiplier: 1.15
+  handWidthMultiplier: 1.8
+  minimumHandWidth: 0.3
 --- !u!4 &245711364
 Transform:
   m_ObjectHideFlags: 0
@@ -199,6 +201,10 @@ MonoBehaviour:
   poseReceiver: {fileID: 1356920478}
   lineMaterial: {fileID: 0}
   lineWidth: 0.05
+  headHeightMultiplier: 0.9
+  headWidthMultiplier: 1.15
+  handWidthMultiplier: 1.8
+  minimumHandWidth: 0.3
 --- !u!4 &263752096
 Transform:
   m_ObjectHideFlags: 0
@@ -551,6 +557,7 @@ GameObject:
   - component: {fileID: 744592473}
   - component: {fileID: 744592472}
   - component: {fileID: 744592474}
+  - component: {fileID: 744592475}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -712,6 +719,20 @@ MonoBehaviour:
   moveSpeed: 4
   jumpForce: 7
   bodyLayerName: Body
+--- !u!114 &744592475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 744592469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fe56d06d34f336469cc3bc16eafef8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerRespawn
+  deathY: -6
+  respawnPoint: {fileID: 1377862193}
 --- !u!1 &1328334360
 GameObject:
   m_ObjectHideFlags: 0
@@ -851,6 +872,7 @@ MonoBehaviour:
   visibilityThreshold: 0.65
   maxNormalizedMargin: 0.05
   maxWorldJumpPerFrame: 1.2
+  lostLandmarkGraceTime: 0.2
 --- !u!4 &1356920479
 Transform:
   m_ObjectHideFlags: 0
@@ -861,6 +883,37 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 427.79507, y: 267.46054, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1377862192
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1377862193}
+  m_Layer: 0
+  m_Name: RespawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1377862193
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1377862192}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1003,3 +1056,4 @@ SceneRoots:
   - {fileID: 263752096}
   - {fileID: 245711364}
   - {fileID: 744592471}
+  - {fileID: 1377862193}

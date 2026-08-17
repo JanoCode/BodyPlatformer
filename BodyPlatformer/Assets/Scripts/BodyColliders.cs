@@ -8,7 +8,7 @@ public class BodyColliders : MonoBehaviour
     [SerializeField] private float edgeRadius = 0.03f;
 
     [Header("Head")]
-    [SerializeField] private float headHeightMultiplier = 0.9f;
+    [SerializeField] private float headHeightMultiplier = 0.55f;
     [SerializeField] private float headWidthMultiplier = 1.15f;
 
     [Header("Hands")]
@@ -83,11 +83,20 @@ public class BodyColliders : MonoBehaviour
         if (poseReceiver == null)
             return;
 
+        if (!poseReceiver.IsPersonDetected())
+        {
+            DisableAllColliders();
+            return;
+        }
+
         GameObject[] points =
             poseReceiver.GetLandmarkObjects();
 
         if (points == null || points.Length < 33)
+        {
+            DisableAllColliders();
             return;
+        }
 
         UpdateLeftArm(points);
         UpdateShoulders(points);
@@ -100,6 +109,33 @@ public class BodyColliders : MonoBehaviour
 
         UpdateLeftHand(points);
         UpdateRightHand(points);
+    }
+
+    private void DisableAllColliders()
+    {
+        if (leftArmCollider != null)
+            leftArmCollider.enabled = false;
+
+        if (shouldersCollider != null)
+            shouldersCollider.enabled = false;
+
+        if (rightArmCollider != null)
+            rightArmCollider.enabled = false;
+
+        if (leftLegCollider != null)
+            leftLegCollider.enabled = false;
+
+        if (rightLegCollider != null)
+            rightLegCollider.enabled = false;
+
+        if (headCollider != null)
+            headCollider.enabled = false;
+
+        if (leftHandCollider != null)
+            leftHandCollider.enabled = false;
+
+        if (rightHandCollider != null)
+            rightHandCollider.enabled = false;
     }
 
     private bool AreVisible(params int[] indexes)
@@ -213,66 +249,44 @@ public class BodyColliders : MonoBehaviour
             (leftEar + rightEar) * 0.5f;
 
         float width =
-            Vector2.Distance(leftEar, rightEar)
-            * headWidthMultiplier;
+            Vector2.Distance(leftEar, rightEar) *
+            headWidthMultiplier;
 
         float height =
             width * headHeightMultiplier;
 
-        float halfWidth =
-            width * 0.5f;
+        float radiusX = width * 0.5f;
+        float radiusY = height;
 
-        Vector3 left =
-            new Vector3(
-                center.x - halfWidth,
-                center.y,
-                0f
-            );
+        int segments = 20;
 
-        Vector3 upperLeft =
-            new Vector3(
-                center.x - halfWidth * 0.5f,
-                center.y + height * 0.65f,
-                0f
-            );
+        Vector2[] edgePoints =
+            new Vector2[segments + 1];
 
-        Vector3 top =
-            new Vector3(
-                center.x,
-                center.y + height,
-                0f
-            );
-
-        Vector3 upperRight =
-            new Vector3(
-                center.x + halfWidth * 0.5f,
-                center.y + height * 0.65f,
-                0f
-            );
-
-        Vector3 right =
-            new Vector3(
-                center.x + halfWidth,
-                center.y,
-                0f
-            );
-
-        headCollider.points = new Vector2[]
+        for (int i = 0; i <= segments; i++)
         {
-            headCollider.transform.InverseTransformPoint(left),
-            headCollider.transform.InverseTransformPoint(upperLeft),
-            headCollider.transform.InverseTransformPoint(top),
-            headCollider.transform.InverseTransformPoint(upperRight),
-            headCollider.transform.InverseTransformPoint(right)
-        };
+            float t = (float)i / segments;
+
+            float angle =
+                Mathf.PI * (1f - t);
+
+            Vector3 worldPoint =
+                new Vector3(
+                    center.x + Mathf.Cos(angle) * radiusX,
+                    center.y + Mathf.Sin(angle) * radiusY,
+                    0f
+                );
+
+            edgePoints[i] =
+                headCollider.transform
+                    .InverseTransformPoint(worldPoint);
+        }
+
+        headCollider.points = edgePoints;
     }
 
     private void UpdateLeftHand(GameObject[] points)
     {
-        // 15 = muñeca izquierda
-        // 17 = meñique izquierdo
-        // 19 = índice izquierdo
-
         bool visible = AreVisible(15, 17, 19);
 
         leftHandCollider.enabled = visible;
@@ -290,10 +304,6 @@ public class BodyColliders : MonoBehaviour
 
     private void UpdateRightHand(GameObject[] points)
     {
-        // 16 = muñeca derecha
-        // 18 = meñique derecho
-        // 20 = índice derecho
-
         bool visible = AreVisible(16, 18, 20);
 
         rightHandCollider.enabled = visible;
@@ -332,7 +342,9 @@ public class BodyColliders : MonoBehaviour
             fingerCenter - wrist;
 
         if (handDirection.sqrMagnitude < 0.0001f)
+        {
             handDirection = Vector2.up;
+        }
 
         handDirection.Normalize();
 
@@ -358,16 +370,20 @@ public class BodyColliders : MonoBehaviour
                 0.55f
             );
 
-        Vector3 left =
-            center - (Vector3)(sideDirection * width * 0.5f);
+        // El Transform sigue la mano para funcionar
+        // correctamente como plataforma móvil.
+        handCollider.transform.position = center;
 
-        Vector3 right =
-            center + (Vector3)(sideDirection * width * 0.5f);
+        Vector2 left =
+            -sideDirection * width * 0.5f;
+
+        Vector2 right =
+            sideDirection * width * 0.5f;
 
         handCollider.points = new Vector2[]
         {
-            handCollider.transform.InverseTransformPoint(left),
-            handCollider.transform.InverseTransformPoint(right)
+            left,
+            right
         };
     }
 
@@ -376,8 +392,9 @@ public class BodyColliders : MonoBehaviour
         EdgeCollider2D collider
     )
     {
-        return collider.transform.InverseTransformPoint(
-            landmark.transform.position
-        );
+        return collider.transform
+            .InverseTransformPoint(
+                landmark.transform.position
+            );
     }
 }
